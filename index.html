@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <button id="increment">+1</button>
+  <span id="count">0</span>
+  <button id="decrement">-1</button>
+  <script src="./index.js"></script>
+  <script src="./middlewares/logger.js"></script>
+  <script src="./middlewares/thunk.js"></script>
+  <script>
+
+    function enhancer (createStore) {
+      return function (reducer, initialState) {
+        let store = createStore(reducer, initialState)
+        let dispatch = store.dispatch
+        function _dispatch (action) {
+          if (typeof action === 'function') {
+            return action(dispatch)
+          }
+          dispatch(action)
+        }
+        return {
+          ...store,
+          dispatch: _dispatch
+        }
+      }
+    }
+    // function increment (dispatch) {
+    //   setTimeout(() => {
+    //     dispatch({type: 'increment'})
+    //   }, 1000)
+    // }
+
+    function increment () {
+      return {type: 'increment'}
+    }
+
+    function decrement () {
+      return {type: 'decrement'}
+    }
+
+    function reducer (state, action) {
+      switch (action.type) {
+        case 'increment':
+          return state + 1
+        case 'decrement':
+          return state - 1
+        default:
+          return state
+      }
+    }
+    // let store = createStore(reducer, 0, enhancer)
+
+    function counterReducer (state, action) {
+      switch (action.type) {
+        case 'increment':
+          return state + 1
+        case 'decrement':
+          return state - 1
+        default:
+          return state
+      }
+    }
+    let rootReducer = combineReducers({counter: counterReducer})
+
+    // let store = createStore(reducer, 0, applyMiddleware(logger, thunk))
+    let store = createStore(rootReducer, {counter: 0}, applyMiddleware(logger, thunk))
+
+    let actions = bindActionCreators({increment, decrement}, store.dispatch)
+
+    store.subscribe(function () {
+      document.getElementById('count').innerHTML = store.getState().counter
+    })
+
+    document.getElementById('increment').onclick = function () {
+      // store.dispatch({type: 'increment'})
+      // store.dispatch(increment)
+      actions.increment()
+    }
+    document.getElementById('decrement').onclick = function () {
+      // store.dispatch({type: 'decrement'})
+      actions.decrement()
+    }
+
+  </script>
+</body>
+</html>
